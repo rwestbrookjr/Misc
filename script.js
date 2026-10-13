@@ -1,14 +1,18 @@
+
 // Global Vars
 let comeout = true;
 let point = 0;
 let shooterCount = 1;
 let rollCount = 1;
+let winCount = 0;
+let bankRoll = 100;
 let message = {
   "Shooter": 0,
   "Roll": 0,
   "D1":0,
   "D2":0,
   "Total":0,
+  "Bankroll": bankRoll,
   "Result":""
 }
 
@@ -35,7 +39,6 @@ function appendMessage(message) {
 
 // Initial log entries
 appendMessage("System initialized.");
-
 
 // Wiring up the interactive text input and button
 const messageInput = document.getElementById("message-input");
@@ -76,9 +79,12 @@ function analyzeRoll(roll){
   if(comeout && (roll == 7 || roll == 11)){
       // 7 or 11 wins on comeout
       result = `WINNER!`;
+      bankRoll+= 10;
+      winCount++;
     }else if (comeout && (roll == 2 || roll == 3 || roll == 12)){
       // 2, 3, 12 - Craps on comeout
       result = `Craps - You Lose!`;
+      bankRoll-= 10;
     }else if (comeout){
       // Point set
       result = `Point of ${roll} set...`;
@@ -87,11 +93,14 @@ function analyzeRoll(roll){
     }else if(!comeout && roll == 7){
       // Seven-Out
       result = `Seven-Out, New Shooter!`;
+      bankRoll-= 10;
       comeout = true;
       point = 0;
     }else if(!comeout && roll == point){
       // Point Hit - WINNER
       result = `Point Hit - WINNER!`;
+      bankRoll+= 10;
+      winCount++;
       comeout = true;
       point = 0;
     }else{
@@ -111,6 +120,7 @@ function runShooter(){
     message.D2 = die2;
     message.Total = roll;
     message.Result = result;
+    message.Bankroll = bankRoll;
     //appendMessage(message);
     return message;
   }
@@ -136,3 +146,4 @@ while(shooterCount <= 10){
     appendMessage(`Error in forLoop\n${error}`);
   }
 }
+appendMessage(`Win Count = ${winCount} Final Bankroll = ${bankRoll}`);

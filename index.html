@@ -77,13 +77,12 @@
   <!-- Single element receiving all message outputs -->
   <div id="log-output"></div>
 
-  <!-- Interactive input to demonstrate appending messages -->
-  <div class="controls">
-    <input type="text" id="message-input" placeholder="Type a message and press Enter..." />
-    <button id="send-btn">Append Message</button>
+  <div>
+    <canvas id="myChart"></canvas>
   </div>
 
   <!-- Defer ensures the DOM is loaded before script.js runs -->
+  <script src="chart.umd.min.js" defer></script>
   <script src="script.js" defer></script>
 </body>
 </html>
