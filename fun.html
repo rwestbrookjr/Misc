@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Craps Simulator with Chart Debug</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  canvas { border: 1px solid #ccc; display: block; margin-top: 20px; }
+  #log {
+    background: #111;
+    color: #0f0;
+    padding: 10px;
+    margin-top: 20px;
+    height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<h1>Craps Simulator with Chart Debug</h1>
+<label>Shooters per Simulation: <input id="shooters" type="number" value="10"></label>
+<button onclick="runSimulation()">Run Simulation</button>
+<canvas id="bankrollChart" width="1000" height="500"></canvas>
+<div id="log"></div>
+
+<script>
+// ===== DEBUG LOGGER =====
+(function() {
+    const logDiv = document.getElementById('log');
+    function writeLog(type, args) {
+        const msg = Array.from(args).map(a => 
+            (typeof a === 'object' ? JSON.stringify(a) : String(a))
+        ).join(' ');
+        logDiv.textContent += `[${type.toUpperCase()}] ${msg}\n`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    const origLog = console.log;
+    console.log = function() { writeLog('log', arguments); origLog.apply(console, arguments); };
+    const origErr = console.error;
+    console.error = function() { writeLog('error', arguments); origErr.apply(console, arguments); };
+})();
+
+// ===== CRAPS SIMULATION =====
+function rollDice() {
+    return Math.floor(Math.random() * 6) + 1;
+}
+
+function playShooter(strategy, betAmount = 10) {
+    let rolls = [];
+    let changes = [];
+    let phase = "comeout";
+    let point = null;
+    let shooterEnded = false;
+
+    while (!shooterEnded) {
+        let roll = rollDice() + rollDice();
+        rolls.push(roll);
+
+        if (phase === "comeout") {
+            if ([7, 11].includes(roll)) {
+                changes.push(strategy === "Pass" ? betAmount : -betAmount);
+            } else if ([2, 3, 12].includes(roll)) {
+                changes.push(strategy === "Pass" ? -betAmount : betAmount);
+            } else {
+                point = roll;
+                changes.push(0);
+                phase = "point";
+            }
+        } else if (phase === "point") {
+            if (roll === point) {
+                changes.push(strategy === "Pass" ? betAmount : -betAmount);
+                phase = "comeout";
+                point = null;
+            } else if (roll === 7) {
+                changes.push(strategy === "Pass" ? -betAmount : betAmount);
+                shooterEnded = true;
+            } else {
+                changes.push(0);
+            }
+        }
+    }
+
+    return { rolls, changes };
+}
+
+function runSimulation() {
+    console.log("Simulation started");
+    const shooters = parseInt(document.getElementById("shooters").value) || 10;
+    console.log("Shooters to simulate:", shooters);
+
+    let bankrollPass = 0;
+    let bankrollDontPass = 0;
+    let passHistory = [];
+    let dontPassHistory = [];
+    let rollLabels = [];
+    let shooterEndIndices = [];
+
+    for (let s = 0; s < shooters; s++) {
+        let passShooter = playShooter("Pass", 10);
+        let dontShooter = playShooter("DontPass", 10);
+
+        for (let i = 0; i < passShooter.rolls.length; i++) {
+            bankrollPass += passShooter.changes[i];
+            bankrollDontPass += dontShooter.changes[i];
+            passHistory.push(bankrollPass);
+            dontPassHistory.push(bankrollDontPass);
+            rollLabels.push(passShooter.rolls[i]);
+        }
+        shooterEndIndices.push(passHistory.length - 1);
+    }
+
+    console.log("Pass History:", passHistory);
+    console.log("Don't Pass History:", dontPassHistory);
+    console.log("Roll Labels:", rollLabels);
+    console.log("Shooter End Indices:", shooterEndIndices);
+
+    drawChart(passHistory, dontPassHistory, shooterEndIndices, rollLabels);
+}
+
+// ===== CHART DRAWING =====
+function drawChart(passHistory, dontPassHistory, shooterEndIndices, rollLabels) {
+    try {
+        console.log("Drawing chart...");
+        const canvas = document.getElementById('bankrollChart');
+        const ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (passHistory.length === 0) {
+            console.error("No data to draw");
+            return;
+        }
+
+        console.log("Calculating chart scale...");
+        const padding = 50;
+        const maxVal = Math.max(...passHistory, ...dontPassHistory);
+        const minVal = Math.min(...passHistory, ...dontPassHistory);
+        const yRange = maxVal - minVal || 1;
+        const xStep = (canvas.width - padding * 2) / passHistory.length;
+
+        function yCoord(value) {
+            return canvas.height - padding - ((value - minVal) / yRange) * (canvas.height - padding * 2);
+        }
+
+        console.log("Drawing axes...");
+        ctx.strokeStyle = "#000";
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvas.height - padding);
+        ctx.lineTo(canvas.width - padding, canvas.height - padding);
+        ctx.stroke();
+
+        console.log("Drawing shooter-end lines...");
+        ctx.strokeStyle = "rgba(255,0,0,0.3)";
+        shooterEndIndices.forEach(idx => {
+            const x = padding + idx * xStep;
+            ctx.beginPath();
+            ctx.moveTo(x, padding);
+            ctx.lineTo(x, canvas.height - padding);
+            ctx.stroke();
+        });
+
+        console.log("Drawing Pass Line bankroll...");
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding, yCoord(passHistory[0]));
+        for (let i = 1; i < passHistory.length; i++) {
+            ctx.lineTo(padding + i * xStep, yCoord(passHistory[i]));
+        }

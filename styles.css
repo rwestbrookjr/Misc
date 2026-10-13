@@ -1,0 +1,76 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #0b3d0b;
+    color: white;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+#table-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+#crapsTable {
+    background: #006400;
+    border: 3px solid #fff;
+    border-radius: 10px;
+}
+
+#chip-rack {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.chip {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: red;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    border: 2px solid white;
+}
+
+.chip:active {
+    cursor: grabbing;
+}
+
+#strategy-output {
+    background: black;
+    color: lime;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 800px;
+    margin: auto;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Modal styling */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background: white;
+    color: black;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    margin: 100px auto;
+}
